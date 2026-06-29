@@ -152,17 +152,17 @@ if [ -n "$SRC" ]; then
   [ -d "$SKILL_ROOT" ] || SKILL_ROOT="$SRC"   # allow pointing straight at the skill dir
 else
   TMP="$(mktemp -d 2>/dev/null || mktemp -d -t honchskill)"
-  url="https://codeload.github.com/$REPO/tar.gz/refs/tags/$REF"
   step "fetching $REPO@$REF"
-  if command -v curl >/dev/null 2>&1; then
-    curl -fsSL "$url" -o "$TMP/skill.tgz" 2>/dev/null \
-      || { url="https://codeload.github.com/$REPO/tar.gz/refs/heads/$REF"; curl -fsSL "$url" -o "$TMP/skill.tgz"; }
-  elif command -v wget >/dev/null 2>&1; then
-    wget -qO "$TMP/skill.tgz" "$url" \
-      || { url="https://codeload.github.com/$REPO/tar.gz/refs/heads/$REF"; wget -qO "$TMP/skill.tgz" "$url"; }
-  else
-    fail "need curl or wget to download the skill"; exit 1
-  fi
+  fetch() { # $1=url $2=out
+    if command -v curl >/dev/null 2>&1; then curl -fsSL "$1" -o "$2" 2>/dev/null
+    elif command -v wget >/dev/null 2>&1; then wget -qO "$2" "$1" 2>/dev/null
+    else fail "need curl or wget to download the skill"; exit 1; fi
+  }
+  got=0
+  for ref in "refs/tags/$REF" "refs/heads/$REF" "refs/heads/main"; do
+    if fetch "https://codeload.github.com/$REPO/tar.gz/$ref" "$TMP/skill.tgz"; then got=1; break; fi
+  done
+  [ "$got" -eq 1 ] || { fail "could not download $REPO (tried $REF and main)"; exit 1; }
   tar -xzf "$TMP/skill.tgz" -C "$TMP"
   SKILL_ROOT="$(find "$TMP" -maxdepth 2 -type d -name "$SKILL_NAME" | head -1)"
 fi
@@ -172,7 +172,11 @@ if [ -z "${SKILL_ROOT:-}" ] || [ ! -d "$SKILL_ROOT/content" ]; then
 fi
 
 # ---------------------------------------------------------------- install
-copy_body() { mkdir -p "$1"; cp -R "$SKILL_ROOT/content" "$1/content"; }
+copy_body() {
+  mkdir -p "$1"; cp -R "$SKILL_ROOT/content" "$1/content"
+  [ -f "$SKILL_ROOT/VERSION" ] && cp "$SKILL_ROOT/VERSION" "$1/VERSION"
+  return 0
+}
 
 install_claude() {
   if [ "$SCOPE" = "project" ]; then dir="$BASE/.claude/skills/$SKILL_NAME"; else dir="$HOME/.claude/skills/$SKILL_NAME"; fi
