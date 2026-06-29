@@ -1,0 +1,27 @@
+---
+description: >-
+  Integrate Honch product analytics into this codebase (honch SDK / honch
+  analytics / honch/honch / @honch/react-native-relay / sending events to
+  i.honch.io). Detects the right path (ESP-IDF, Arduino, C/POSIX, MicroPython,
+  relay, or HTTP/JSON) and wires init + delivery + a verified first event.
+  Targets Honch SDK 0.3.0.
+globs:
+alwaysApply: false
+---
+
+# Honch Integrator
+
+When asked to add, install, set up, or wire up Honch, follow the procedure in the
+installed skill body under `.honch/honch-integrator/`:
+
+1. Read `.honch/honch-integrator/content/integrator.md` (full workflow + the hard
+   "no edits before confirmation" gate + the universal trap checklist).
+2. Detect the path with `.honch/honch-integrator/content/detection.md`, then read
+   the matching `.honch/honch-integrator/content/<path>.md`.
+3. Plan → confirm (one explicit go-ahead) → implement → verify the build, then
+   walk `.honch/honch-integrator/content/production-checklist.md`.
+
+Non-negotiables: no edits before plan approval; delivery must be pumped
+(`tick()`/`flush()`) or events never upload; device ports need ≥ 8192-byte stack
+and an NTP-synced clock; identity merges need a `$identify` with
+`$anon_distinct_id`; keep the API key out of source control. Targets SDK 0.3.0.
